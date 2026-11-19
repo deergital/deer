@@ -1,0 +1,7 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {assetType,visualWarnings,replaceAssetIds,internalTarget,assetId} from '../src/lib/document-format.mjs';
+test('file allowlist rejects executable formats and oversize or empty files',()=>{assert.equal(assetType('fOTO.JPEG',12),'image/jpeg');for(const [name,size] of [['x.svg',10],['x.html',10],['x.exe',10],['x.png',0],['x.png',4194305]])assert.throws(()=>assetType(name,size));});
+test('internal targets require typed stable IDs and never execute javascript',()=>{const id='11111111-1111-4111-8111-111111111111';assert.deepEqual(internalTarget('deer://document/'+id),{type:'document',id});assert.equal(internalTarget('javascript:alert(1)'),null);assert.equal(internalTarget('deer://secret/'+id),null);assert.equal(assetId('deer-asset:'+id),id);});
+test('unsupported visual content stays in Markdown instead of silent conversion',()=>{for(const text of ['Texto <script>alert(1)</script>','---\ntitle: Brief\n---','[^nota]','[web]: https://example.com','$$x$$'])assert.ok(visualWarnings(text).length);assert.deepEqual(visualWarnings('# Título\n\n**Negrita**\n\n| A |\n| --- |\n\n```mermaid\nflowchart TD\nA --> B\n```'),[]);});
+test('package resource remapping only replaces stable asset references',()=>{const a='11111111-1111-4111-8111-111111111111',b='22222222-2222-4222-8222-222222222222';const text='![Foto](deer-asset:'+a+' "Pie")\nTexto literal';assert.equal(replaceAssetIds(text,{[a]:b}),'![Foto](deer-asset:'+b+' "Pie")\nTexto literal');});

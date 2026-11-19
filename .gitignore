@@ -10,3 +10,4 @@ test-results/
 *.log
 .netlify/
 .deer-build/
+.pnpm-cache/

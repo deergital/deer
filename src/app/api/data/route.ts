@@ -1,16 +1,7 @@
 import {NextRequest,NextResponse} from 'next/server';
-import {createClient} from '@supabase/supabase-js';
+import {identity} from '@/lib/server-identity';
 import {z} from 'zod';
 export const dynamic='force-dynamic';
-async function identity(req:NextRequest){
- const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
- if(!url||!key)throw new Error('NOT_CONFIGURED');
- const token=req.headers.get('authorization');if(!token?.startsWith('Bearer '))throw new Error('UNAUTHORIZED');
- const db=createClient(url,key,{global:{headers:{Authorization:token}},auth:{persistSession:false,autoRefreshToken:false}});
- const {data,error}=await db.auth.getUser(token.slice(7));if(error||!data.user)throw new Error('UNAUTHORIZED');
- const profile=await db.from('profiles').select('*').eq('id',data.user.id).single();if(profile.error||!profile.data?.is_enabled)throw new Error('FORBIDDEN');
- return {db,profile:profile.data};
-}
 function fail(error:unknown){const message=error instanceof Error?error.message:'SERVICE_ERROR';const status=message==='NOT_CONFIGURED'?503:message==='UNAUTHORIZED'?401:message==='FORBIDDEN'?403:500;return NextResponse.json({error:status===500?'No se pudo completar la operación.':message},{status,headers:{'Cache-Control':'no-store'}});}
 export async function GET(req:NextRequest){try{const {db,profile}=await identity(req);const params=req.nextUrl.searchParams;const kind=params.get('kind');
  if(kind==='backup'){
@@ -19,6 +10,16 @@ export async function GET(req:NextRequest){try{const {db,profile}=await identity
  return NextResponse.json(data,{headers:{'Cache-Control':'no-store','Content-Disposition':'attachment; filename="deer-backup.json"'}});
  }
  if(kind==='profile')return NextResponse.json({profile},{headers:{'Cache-Control':'no-store'}});
+
+ if(kind==='document'||kind==='task'||kind==='project'){
+ const id=params.get('id');if(!z.uuid().safeParse(id).success)return NextResponse.json({error:'Identificador inválido'},{status:400});
+ const table=kind==='document'?'documents':kind==='task'?'tasks':'projects';const {data,error}=await db.from(table).select('*').eq('id',id!).single();if(error||!data)return NextResponse.json({error:'Registro no disponible'},{status:404});return NextResponse.json({row:data},{headers:{'Cache-Control':'no-store'}});
+ }
+ if(kind==='assets'){const id=params.get('document');if(!z.uuid().safeParse(id).success)return NextResponse.json({error:'Documento inválido'},{status:400});const {data,error}=await db.from('document_assets').select('*').eq('document_id',id!).order('created_at');if(error)throw Error('ASSET_QUERY_ERROR');return NextResponse.json({rows:data},{headers:{'Cache-Control':'no-store'}});}
+ if(kind==='backlinks'){const id=params.get('id'),type=params.get('target_type');if(!z.uuid().safeParse(id).success||!['document','task','project'].includes(type||''))return NextResponse.json({error:'Referencia inválida'},{status:400});const links=await db.from('document_links').select('source_id').eq('target_id',id!).eq('target_type',type!);if(links.error)throw Error('LINK_QUERY_ERROR');const ids=[...new Set((links.data||[]).map(l=>l.source_id))];const result=ids.length?await db.from('documents').select('id,title,kind').in('id',ids):{data:[],error:null};if(result.error)throw Error('LINK_QUERY_ERROR');return NextResponse.json({rows:result.data},{headers:{'Cache-Control':'no-store'}});}
+ if(kind==='entity-index'){
+ const entities=[];for(const [table,type,label] of [['documents','document','title'],['projects','project','name'],['tasks','task','title']] as const){let offset=0;while(true){const r=await db.from(table).select('id,'+label).order('id').range(offset,offset+499);if(r.error)throw Error('INDEX_QUERY_ERROR');const rows=r.data as unknown as Record<string,string>[];entities.push(...rows.map(r=>({id:r.id,type,title:r[label]})));if(rows.length<500)break;offset+=500;}}return NextResponse.json({rows:entities},{headers:{'Cache-Control':'no-store'}});
+ }
  if(kind==='documents'){
  const offset=Number(params.get('offset')||0);if(!Number.isInteger(offset)||offset<0||offset>100000)return NextResponse.json({error:'Página inválida'},{status:400});
  let q=db.from('documents').select('*',{count:'exact'}).order('updated_at',{ascending:false}).order('id');
