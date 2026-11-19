@@ -13,6 +13,11 @@ async function identity(req:NextRequest){
 }
 function fail(error:unknown){const message=error instanceof Error?error.message:'SERVICE_ERROR';const status=message==='NOT_CONFIGURED'?503:message==='UNAUTHORIZED'?401:message==='FORBIDDEN'?403:500;return NextResponse.json({error:status===500?'No se pudo completar la operación.':message},{status,headers:{'Cache-Control':'no-store'}});}
 export async function GET(req:NextRequest){try{const {db,profile}=await identity(req);const params=req.nextUrl.searchParams;const kind=params.get('kind');
+ if(kind==='backup'){
+ const {data,error}=await db.rpc('deer_export_backup');
+ if(error)return NextResponse.json({error:'No se pudo generar el respaldo. Comprueba que la migración de respaldo está aplicada.'},{status:503,headers:{'Cache-Control':'no-store'}});
+ return NextResponse.json(data,{headers:{'Cache-Control':'no-store','Content-Disposition':'attachment; filename="deer-backup.json"'}});
+ }
  if(kind==='profile')return NextResponse.json({profile},{headers:{'Cache-Control':'no-store'}});
  const offset=Number(params.get('offset')||0);if(!Number.isInteger(offset)||offset<0||offset>100000)return NextResponse.json({error:'Página inválida'},{status:400});
  let q=db.from(kind==='projects'?'projects':'tasks').select('*',{count:'exact'});

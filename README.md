@@ -1,5 +1,26 @@
 # Deer — base funcional E1
 
+## Verificación adicional: respaldo y conflictos
+
+- Aplicar también `supabase/migrations/202611190001_deer_backup.sql`.
+- La sesión habilitada muestra **Descargar respaldo**. Exporta perfil, proyectos
+  y todas las tareas (incluidas completadas), en una instantánea consistente bajo
+  las mismas políticas RLS. No incluye contraseñas, sesiones, eventos ni recibos
+  internos de solicitudes. Es un respaldo operativo E1, no un dump del servicio.
+- Guardar el JSON fuera del repositorio y ejecutar:
+  `node scripts/verify-backup.mjs RUTA_AL_JSON`.
+  Restaura en PostgreSQL embebido en memoria y compara campos, identificadores,
+  fechas y relaciones. No conecta con Supabase ni sobrescribe el original.
+  No recupera credenciales Auth; una recuperación real requiere aprovisionar
+  primero la cuenta correspondiente. Restauración a otro Supabase aún pendiente.
+- Conflicto real: abrir la misma tarea en ambos dispositivos antes de editar.
+  Guardar un cambio en uno y después otro en el segundo sin recargar.
+  El segundo debe mostrar conflicto y conservar su borrador; al reabrir se
+  conserva el cambio del primero. La prueba embebida no reemplaza este recorrido.
+- El aviso de hidratación Emotion/MUI se resolvió renderizando el espacio
+  privado en cliente mediante `next/dynamic`, sin SSR del árbol Material UI.
+  Se comprobó ausencia del aviso tras recargar el desarrollo local.
+
 Componentes reales en Next.js/React/Material UI y migración SQL para Supabase. Esta entrega implementa el núcleo; todavía no declara completados todos los criterios E1.
 
 ## Qué funciona
