@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.env*
+!.env.example
+*.tsbuildinfo
+test-results/
+.deer-local/
+.pnpm-store/
+
+*.log
+.netlify/
