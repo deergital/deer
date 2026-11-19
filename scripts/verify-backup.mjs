@@ -7,11 +7,12 @@ import assert from 'node:assert/strict';
 // no production writes. Backups contain operational records, never Auth secrets.
 export async function verifyBackup(backup){
  assert.equal(backup.format,'deer-e1-backup');
- assert.equal(backup.schema_version,1);
+ assert.ok([1,2].includes(backup.schema_version));
+ const tables=['profiles','projects','tasks',...(backup.schema_version===2?['documents']:[])];
  assert.match(backup.owner_id,/^[0-9a-f-]{36}$/i);
  assert.equal(backup.profiles?.length,1);
  assert.equal(backup.profiles[0].id,backup.owner_id);
- for(const table of ['projects','tasks']){
+ for(const table of tables.filter(t=>t!=='profiles')){
   assert.ok(Array.isArray(backup[table]));
   for(const row of backup[table])assert.equal(row.owner_id,backup.owner_id,'Mixed owners');
  }
@@ -19,10 +20,11 @@ export async function verifyBackup(backup){
  try{
   await db.exec(await readFile(new URL('../supabase/tests/bootstrap.sql',import.meta.url),'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/202611160001_deer_e1.sql',import.meta.url),'utf8'));
+  if(backup.schema_version===2){await db.exec(await readFile(new URL('../supabase/migrations/202611190001_deer_backup.sql',import.meta.url),'utf8'));await db.exec(await readFile(new URL('../supabase/migrations/202611190002_deer_documents.sql',import.meta.url),'utf8'));}
   await db.query('insert into auth.users(id) values ($1)',[backup.owner_id]);
   await db.exec('begin');
   try{
-   for(const table of ['profiles','projects','tasks']){
+   for(const table of tables){
     const {rows:columns}=await db.query("select column_name from information_schema.columns where table_schema='public' and table_name=$1",[table]);
     const allowed=columns.map(c=>c.column_name).sort();
     for(const row of backup[table])assert.deepEqual(Object.keys(row).sort(),allowed,'Missing or unknown columns');
@@ -30,7 +32,7 @@ export async function verifyBackup(backup){
    }
    await db.exec('commit');
   }catch(e){await db.exec('rollback');throw e;}
-  for(const table of ['profiles','projects','tasks']){
+  for(const table of tables){
    const {rows}=await db.query(`select to_jsonb(t) as record from public.${table} t order by id`);
    const expected=[...backup[table]].sort((a,b)=>a.id.localeCompare(b.id));
    assert.equal(rows.length,expected.length);
@@ -44,7 +46,7 @@ export async function verifyBackup(backup){
     assert.deepEqual(actual,original,`Restore mismatch: ${table}`);
    }
   }
-  return Object.fromEntries(['profiles','projects','tasks'].map(t=>[t,backup[t].length]));
+  return Object.fromEntries(tables.map(t=>[t,backup[t].length]));
  }finally{await db.close();}
 }
 

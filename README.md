@@ -1,5 +1,12 @@
 # Deer — base funcional E1
 
+## Primera entrega E2
+
+Biblioteca y documentos Markdown implementados. Alcance y recorrido de prueba:
+`docs/E2-primera-entrega.md`. Requiere aplicar la migración adicional
+`supabase/migrations/202611190002_deer_documents.sql` antes de utilizarla.
+No declarar E2 completa: editor visual, archivos y relaciones internas pendientes.
+
 ## Verificación adicional: respaldo y conflictos
 
 - Aplicar también `supabase/migrations/202611190001_deer_backup.sql`.
