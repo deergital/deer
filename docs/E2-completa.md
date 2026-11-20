@@ -1,5 +1,7 @@
 # E2 — Contexto documental e identidad Deergital
 
+La experiencia de edición de esta entrega se sustituye por [E2-procesador.md](E2-procesador.md).
+
 19 de noviembre de 2026. Implementación local preparada; pendiente de aplicar
 la migración y comprobar archivos reales en Supabase/Netlify e iPhone.
 

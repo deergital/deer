@@ -1,7 +1,9 @@
+import {remapRichAssets} from './rich-document.mjs';
+import type {JSONContent} from '@tiptap/core';
 import JSZip from 'jszip';
 import {buildDocumentPackage,readDocumentPackage} from './document-package.mjs';
 import {supabase} from './supabase';
-import {assetType,replaceAssetIds} from './document-format.mjs';
+import {assetType} from './document-format.mjs';
 export type Asset={id:string;document_id:string;name:string;mime_type:string;size_bytes:number;sha256:string;storage_path:string};
 export async function authFetch(path:string,options:RequestInit={}){const session=await supabase!.auth.getSession();const response=await fetch(path,{...options,headers:{...options.headers,Authorization:'Bearer '+session.data.session?.access_token}});if(!response.ok){const data=await response.json().catch(()=>({}));throw Error(data.error||'No se pudo completar la operación.');}return response;}
 export async function getAsset(id:string,download=false):Promise<Asset&{url:string}>{return (await authFetch('/api/assets?id='+id+(download?'&download=1':''))).json();}
@@ -19,7 +21,7 @@ export async function uploadAsset(file:File,documentId:string):Promise<Asset>{
 export async function assetBytes(asset:Asset){const signed=await getAsset(asset.id);const response=await fetch(signed.url);if(!response.ok)throw Error('No se pudo descargar '+asset.name);const bytes=await response.arrayBuffer();if(bytes.byteLength!==asset.size_bytes||await fileHash(bytes)!==asset.sha256)throw Error('Integridad incorrecta: '+asset.name);return bytes;}
 export function downloadBlob(blob:Blob,name:string){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
 export async function downloadAsset(id:string){const asset=await getAsset(id);const bytes=await assetBytes(asset);downloadBlob(new Blob([bytes],{type:asset.mime_type}),asset.name);}
-export async function exportDocument(md:string,title:string,assets:Asset[]){const bytes=await buildDocumentPackage(md,title,assets,assetBytes);downloadBlob(new Blob([bytes as BlobPart],{type:'application/zip'}),safeName(title)+'.zip');}
+export async function exportDocument(md:string,title:string,assets:Asset[],rich:JSONContent|null=null){const bytes=await buildDocumentPackage(md,title,assets,assetBytes,rich);downloadBlob(new Blob([bytes as BlobPart],{type:'application/zip'}),safeName(title)+'.zip');}
 export function safeName(name:string){return name.replace(/[^\p{L}\p{N}\s_-]/gu,'').slice(0,100)||'documento';}
-export async function importDocumentPackage(file:File,docId:string){const parsed=await readDocumentPackage(await file.arrayBuffer());let md=parsed.md;for(const {asset:a,bytes} of parsed.resources){const asset=await uploadAsset(new File([bytes as BlobPart],a.name,{type:a.mime_type}),docId);md=md.replaceAll(a.path,'deer-asset:'+asset.id);}return {md,title:parsed.title};}
+export async function importDocumentPackage(file:File,docId:string){const parsed=await readDocumentPackage(await file.arrayBuffer());let md=parsed.md;const mapping:Record<string,string>={};for(const {asset:a,bytes} of parsed.resources){const asset=await uploadAsset(new File([bytes as BlobPart],a.name,{type:a.mime_type}),docId);mapping[a.id]=asset.id;md=md.replaceAll(a.path,'deer-asset:'+asset.id);}return {md,title:parsed.title,rich:remapRichAssets(parsed.rich,mapping)};}
 export async function exportFullBackup(backup:any){if((backup.document_assets||[]).reduce((n:number,a:Asset)=>n+a.size_bytes,0)>100*1024*1024)throw Error('Este respaldo supera el límite de descarga de 100 MB. Requiere exportación por lotes.');const zip=new JSZip();zip.file('backup.json',JSON.stringify(backup,null,2));for(const asset of backup.document_assets||[]){zip.file('assets/'+asset.id,await assetBytes(asset));}downloadBlob(await zip.generateAsync({type:'blob'}),'deer-respaldo-'+new Date().toISOString().slice(0,10)+'.zip');}

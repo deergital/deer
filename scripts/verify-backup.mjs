@@ -9,8 +9,8 @@ import assert from 'node:assert/strict';
 // no production writes. Backups contain operational records, never Auth secrets.
 export async function verifyBackup(backup,files=new Map()){
  assert.equal(backup.format,'deer-e1-backup');
- assert.ok([1,2,3].includes(backup.schema_version));
- const tables=['profiles','projects','tasks',...(backup.schema_version>=2?['documents']:[]),...(backup.schema_version===3?['document_assets','document_links']:[])];
+ assert.ok([1,2,3,4].includes(backup.schema_version));
+ const tables=['profiles','projects','tasks',...(backup.schema_version>=2?['documents']:[]),...(backup.schema_version>=3?['document_assets','document_links']:[])];
  assert.match(backup.owner_id,/^[0-9a-f-]{36}$/i);
  assert.equal(backup.profiles?.length,1);
  assert.equal(backup.profiles[0].id,backup.owner_id);
@@ -24,7 +24,8 @@ export async function verifyBackup(backup,files=new Map()){
   await db.exec(await readFile(new URL('../supabase/tests/bootstrap.sql',import.meta.url),'utf8'));
   await db.exec(await readFile(new URL('../supabase/migrations/202611160001_deer_e1.sql',import.meta.url),'utf8'));
   if(backup.schema_version>=2){await db.exec(await readFile(new URL('../supabase/migrations/202611190001_deer_backup.sql',import.meta.url),'utf8'));await db.exec(await readFile(new URL('../supabase/migrations/202611190002_deer_documents.sql',import.meta.url),'utf8'));}
-  if(backup.schema_version===3){await db.exec(await readFile(new URL('../supabase/tests/storage-bootstrap.sql',import.meta.url),'utf8'));await db.exec(await readFile(new URL('../supabase/migrations/202611190003_deer_e2_complete.sql',import.meta.url),'utf8'));}
+  if(backup.schema_version>=3){await db.exec(await readFile(new URL('../supabase/tests/storage-bootstrap.sql',import.meta.url),'utf8'));await db.exec(await readFile(new URL('../supabase/migrations/202611190003_deer_e2_complete.sql',import.meta.url),'utf8'));}
+  if(backup.schema_version>=4)await db.exec(await readFile(new URL('../supabase/migrations/202611190004_deer_word_processor.sql',import.meta.url),'utf8'));
   await db.query('insert into auth.users(id) values ($1)',[backup.owner_id]);
   await db.exec('begin');
   try{

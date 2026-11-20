@@ -2,16 +2,17 @@
 
 Aplicación privada Next.js/React/Material UI con Supabase y despliegue desde GitHub
 en Netlify. Jorge ha comprobado el núcleo E1 y los documentos E2.1 desde ordenador
-e iPhone. La ampliación E2 está preparada localmente y requiere activación.
+e iPhone. La nueva experiencia de procesador de texto está preparada localmente y requiere activación.
 
-## E2 e identidad Deergital
+## Documentos, kanban e identidad Deergital
 
 Visual/Markdown/Lectura, autoguardado, borradores recuperables, imágenes y adjuntos
 privados, tablas, destacados, Mermaid, enlaces internos y enlaces de vuelta.
 Importación/exportación Markdown y paquetes con recursos. Tipografía local Manrope,
 paleta Deergital e isotipo original para navegación/favicon.
 
-Instrucciones completas, límites y aceptación: [E2-completa.md](docs/E2-completa.md).
+Experiencia actual, actualización y aceptación: [E2-procesador.md](docs/E2-procesador.md).
+La implementación anterior se documenta en [E2-completa.md](docs/E2-completa.md).
 El registro de la primera entrega se conserva en [E2-primera-entrega.md](docs/E2-primera-entrega.md).
 No declarar cerrada la aceptación E2 hasta probar los archivos reales y el recorrido
 desde ambos dispositivos después de publicar.
@@ -33,8 +34,8 @@ Manrope se sirve localmente; su licencia OFL está en public/fonts.
 
 ## Supabase
 
-Aplicar en orden las migraciones de supabase/migrations. Para actualizar E2.1,
-aplicar solo `202611190003_deer_e2_complete.sql` una vez, después de respaldar.
+Aplicar en orden las migraciones de supabase/migrations. Para actualizar E2 completa (migración 202611190003 ya aplicada),
+aplicar solo `202611190004_deer_word_processor.sql` una vez, después de respaldar.
 No ejecutar los archivos bootstrap de pruebas en Supabase.
 
 La cuenta Auth debe tener un perfil habilitado explícitamente. El acceso ordinario
@@ -49,21 +50,21 @@ No cambia las cuentas habilitadas ni permite registro público desde la aplicaci
 
 ## Respaldo y recuperación
 
-Descargar respaldo produce ZIP v3 con perfil, proyectos, tareas, documentos,
+Descargar respaldo produce ZIP v4 con perfil, proyectos, tareas, documentos,
 relaciones, metadatos y bytes privados. Conservarlo fuera del repositorio.
 
 ```sh
 node scripts/verify-backup.mjs RUTA_AL_ZIP
 ```
 
-También se aceptan los JSON históricos v1/v2. El verificador restaura en PostgreSQL
+También se aceptan los JSON/ZIP históricos v1/v2/v3. El verificador restaura en PostgreSQL
 embebido y compara valores, relaciones y archivos; nunca escribe en Supabase.
 No incluye contraseñas/sesiones ni aprovisiona cuentas. La restauración operativa a
 otro servicio y el historial recuperable siguen siendo parte del cierre E4.
 
 ## Verificación
 
-40 pruebas automatizadas cubren reglas, RLS, restricciones, reintentos, conflictos,
+49 pruebas automatizadas cubren reglas, RLS, restricciones, reintentos, conflictos,
 rollback, enlaces, archivos, conversión Tiptap, paquetes e integridad de respaldo.
 Compilación de producción y TypeScript aprobados. Revisión de interfaz con datos
 temporales: claro/oscuro, tablas, casillas, Mermaid, autoguardado y recuperación

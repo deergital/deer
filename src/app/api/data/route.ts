@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
+import {validateRichDocument} from '@/lib/rich-document.mjs';
 import {identity} from '@/lib/server-identity';
 import {z} from 'zod';
 export const dynamic='force-dynamic';
@@ -40,7 +41,7 @@ export async function GET(req:NextRequest){try{const {db,profile}=await identity
  const {data,count,error}=await q.range(offset,offset+49);if(error)throw new Error('QUERY_ERROR');return NextResponse.json({rows:data,count},{headers:{'Cache-Control':'no-store'}});
  }catch(e){return fail(e);}}
 const mutation=z.object({kind:z.enum(['task','project','profile','document']),request_id:z.uuid(),payload:z.record(z.string(),z.unknown()),id:z.uuid().nullable(),expected_version:z.number().int().positive().nullable()}).strict();
-export async function POST(req:NextRequest){try{const {db}=await identity(req);const raw=await req.text();if(raw.length>70000)return NextResponse.json({error:'Contenido demasiado grande'},{status:413});let json;try{json=JSON.parse(raw);}catch{return NextResponse.json({error:'Formato inválido'},{status:400});}const parsed=mutation.safeParse(json);if(!parsed.success)return NextResponse.json({error:'Datos de guardado inválidos'},{status:400});
- const v=parsed.data;const {data,error}=await db.rpc(v.kind==='document'?'deer_document_mutate':'deer_mutate',{...(v.kind==='document'?{}:{p_kind:v.kind}),p_request_id:v.request_id,p_payload:v.payload,p_id:v.id,p_expected_version:v.expected_version});
+export async function POST(req:NextRequest){try{const {db}=await identity(req);const raw=await req.text();if(raw.length>650000)return NextResponse.json({error:'Contenido demasiado grande'},{status:413});let json;try{json=JSON.parse(raw);}catch{return NextResponse.json({error:'Formato inválido'},{status:400});}const parsed=mutation.safeParse(json);if(!parsed.success)return NextResponse.json({error:'Datos de guardado inválidos'},{status:400});
+ const v=parsed.data;if(v.kind==='document'&&Object.hasOwn(v.payload,'content_json')){try{validateRichDocument(v.payload.content_json);}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Contenido inválido'},{status:400});}}const {data,error}=await db.rpc(v.kind==='document'?'deer_document_mutate':'deer_mutate',{...(v.kind==='document'?{}:{p_kind:v.kind}),p_request_id:v.request_id,p_payload:v.payload,p_id:v.id,p_expected_version:v.expected_version});
  if(error){const conflict=error.message.includes('CONFLICT');const denied=error.code==='42501';return NextResponse.json({error:error.message.startsWith('DEER_')?error.message:'Revisa los campos y vuelve a intentar.'},{status:conflict?409:denied?403:400});}return NextResponse.json({row:data},{headers:{'Cache-Control':'no-store'}});
  }catch(e){return fail(e);}}
