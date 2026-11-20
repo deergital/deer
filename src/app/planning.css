@@ -1,0 +1,26 @@
+.mobile-bottom{display:none}
+.settings-panel{max-width:760px}
+.settings-panel h2{margin-top:24px}
+.settings-panel .MuiTextField-root{min-width:230px}
+.planning .toolbar{flex-wrap:wrap}
+.gantt-scroll{overflow:auto;max-height:65vh}
+.gantt{border-collapse:collapse;font-size:11px}
+.gantt th,.gantt td{min-width:65px;padding:10px 5px;border:1px solid var(--line)}
+.gantt th:first-child{position:sticky;left:0;min-width:200px;background:var(--paper);z-index:1;text-align:left}
+.gantt-bar{background:#7861ff88}
+.gantt-bar.done{background:#00b4a688}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));overflow:auto;gap:6px}
+.calendar-day{border:1px solid var(--line);min-height:150px;padding:10px;border-radius:8px}
+.calendar-day h3{font-size:12px;margin:0 0 8px}
+.calendar-day.today{border:2px solid var(--green)}
+.calendar-event{display:block;text-align:left;white-space:normal;overflow-wrap:anywhere;width:100%;padding:8px;margin:4px 0;background:var(--selected);color:var(--text);border:0;border-left:3px solid #7861ff;border-radius:4px;font:500 11px Manrope,sans-serif}
+.calendar-event.done{opacity:.6;border-color:#00b4a6}
+.planning details{padding:16px 0}
+@media(max-width:767px){
+ .workspace{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+ .mobile-bottom{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:1100;padding:8px 4px calc(8px + env(safe-area-inset-bottom));background:var(--paper);border-top:1px solid var(--line);justify-content:space-around}
+ .mobile-bottom button{border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;font:600 10px Manrope,sans-serif;min-width:48px;min-height:48px}
+ .mobile-bottom button[aria-current=page]{color:var(--green)}
+ .task-toolbar .view-toggle{flex-wrap:wrap}
+ .calendar-grid{grid-template-columns:repeat(7,145px)}
+}

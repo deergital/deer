@@ -6,7 +6,7 @@ import KanbanBoard from '@/components/KanbanBoard';
 import type {Task,TaskState} from '@/lib/types';
 const owner='11111111-1111-4111-8111-111111111111',id='44444444-4444-4444-8444-444444444444';
 const project={id:'77777777-7777-4777-8777-777777777777',owner_id:owner,name:'Proyecto de prueba',objective:'Revisión aislada',status:'active' as const,version:1,created_at:'2026-11-19T12:00:00Z',updated_at:'2026-11-19T12:00:00Z'};
-const fixture={id,owner_id:owner,project_id:project.id,title:'Propuesta de trabajo',kind:'proposal',version:1,content_json:null,content_md:'## Contexto y objetivos\n\nUn documento para trabajar con **claridad** y contexto.\n\n| Entregable | Estado |\n| --- | --- |\n| Propuesta | En revisión |',created_at:'2026-11-19T12:00:00Z',updated_at:'2026-11-19T12:00:00Z'};
+const fixture={id,owner_id:owner,project_id:project.id,title:'Propuesta de trabajo',kind:'proposal',version:1,content_json:null,content_md:'## Contexto y objetivos\n\nUn documento para trabajar con **claridad** y contexto.',created_at:'2026-11-19T12:00:00Z',updated_at:'2026-11-19T12:00:00Z'};
 export default function Review(){
  const [mode,setMode]=useState<'light'|'dark'>('light'),[view,setView]=useState('documents'),[ready,setReady]=useState(false);
  const record=useRef<any>(fixture),[tasks,setTasks]=useState<Task[]>([{...project,id:'88888888-8888-4888-8888-888888888888',title:'Revisar propuesta',description:'',status:'todo',project_id:project.id,importance:'medium',start_date:null,due_date:null}]);
