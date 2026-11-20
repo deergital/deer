@@ -1,3 +1,4 @@
+import {readApiResponse} from './api-response.mjs';
 import {remapRichAssets} from './rich-document.mjs';
 import type {JSONContent} from '@tiptap/core';
 import JSZip from 'jszip';
@@ -5,7 +6,7 @@ import {buildDocumentPackage,readDocumentPackage} from './document-package.mjs';
 import {supabase} from './supabase';
 import {assetType} from './document-format.mjs';
 export type Asset={id:string;document_id:string;name:string;mime_type:string;size_bytes:number;sha256:string;storage_path:string};
-export async function authFetch(path:string,options:RequestInit={}){const session=await supabase!.auth.getSession();const response=await fetch(path,{...options,headers:{...options.headers,Authorization:'Bearer '+session.data.session?.access_token}});if(!response.ok){const data=await response.json().catch(()=>({}));throw Error(data.error||'No se pudo completar la operación.');}return response;}
+export async function authFetch(path:string,options:RequestInit={}){const session=await supabase!.auth.getSession();if(session.error)throw Error('No se pudo renovar la sesión. Revisa tu conexión.');const response=await fetch(path,{...options,headers:{...options.headers,Authorization:'Bearer '+session.data.session?.access_token}});if(!response.ok||!response.headers.get('content-type')?.includes('application/json'))await readApiResponse(response);return response;}
 export async function getAsset(id:string,download=false):Promise<Asset&{url:string}>{return (await authFetch('/api/assets?id='+id+(download?'&download=1':''))).json();}
 export async function fileHash(bytes:ArrayBuffer){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(v=>v.toString(16).padStart(2,'0')).join('');}
 export async function uploadAsset(file:File,documentId:string):Promise<Asset>{

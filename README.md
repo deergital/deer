@@ -86,3 +86,7 @@ conflictos, importación/exportación y respaldo desde ordenador/iPhone.
 | src/lib/document-* | Formatos, paquetes, recursos y borradores |
 | supabase/migrations/ | Esquema, RLS y RPC transaccionales |
 | tests/ | Pruebas ejecutables |
+
+Acceso de pantalla de inicio en iPhone: diagnóstico, preparación y activación en
+[Acceso-iPhone.md](docs/Acceso-iPhone.md). El cambio de visibilidad en Netlify
+es una decisión separada y no se modifica desde el código.

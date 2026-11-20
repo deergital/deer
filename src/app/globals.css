@@ -13,3 +13,5 @@
 @media(max-width:1050px){.document-workspace{grid-template-columns:minmax(0,1fr)}.document-inspector{display:grid;grid-template-columns:1fr 1fr}.inspector-section{border-right:1px solid var(--line)}.document-sheet .tiptap{min-height:620px;padding:36px}.word-toolbar{position:relative}}
 @media(max-width:600px){.document-inspector{display:block}.document-sheet{padding:10px}.document-sheet .tiptap{padding:24px 18px;min-height:580px}.document-title-input input{font-size:20px}.document-export-actions{margin-left:0;flex-wrap:wrap}.document-actionbar{gap:8px}.word-toolbar{padding:8px}.word-toolbar select{max-width:130px}.pdf-canvas-area{min-height:450px}.editor-color>span{max-width:60px;white-space:normal}.deer .kanban{grid-auto-columns:minmax(240px,82vw)}}
 .deer .document-title-input input{font-weight:800}.document-sheet .tiptap .image-caption{font-weight:400}.document-sheet .tiptap a{cursor:text}.document-sheet .tiptap a:hover{text-decoration-thickness:2px}
+
+@media(display-mode:standalone){.deer{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}}
