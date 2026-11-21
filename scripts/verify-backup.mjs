@@ -9,14 +9,22 @@ import assert from 'node:assert/strict';
 // no production writes. Backups contain operational records, never Auth secrets.
 export async function verifyBackup(backup,files=new Map()){
  assert.equal(backup.format,'deer-e1-backup');
- assert.ok([1,2,3,4].includes(backup.schema_version));
- const tables=['profiles','projects','tasks',...(backup.schema_version>=2?['documents']:[]),...(backup.schema_version>=3?['document_assets','document_links']:[])];
+ assert.ok([1,2,3,4,5].includes(backup.schema_version));
+ const tables=['profiles','projects','tasks',...(backup.schema_version>=2?['documents']:[]),...(backup.schema_version>=3?['document_assets','document_links']:[]),...(backup.schema_version>=5?['meetings']:[])];
  assert.match(backup.owner_id,/^[0-9a-f-]{36}$/i);
  assert.equal(backup.profiles?.length,1);
  assert.equal(backup.profiles[0].id,backup.owner_id);
  for(const table of tables.filter(t=>t!=='profiles')){
   assert.ok(Array.isArray(backup[table]));
   for(const row of backup[table])assert.equal(row.owner_id,backup.owner_id,'Mixed owners');
+ }
+ if(backup.schema_version>=5){
+  const documents=new Map(backup.documents.map(row=>[row.id,row])),tasks=new Set(backup.tasks.map(row=>row.id));
+  for(const document of documents.values()){
+   const seen=new Set([document.id]);let parent=document.parent_id;
+   while(parent){assert.ok(documents.has(parent),'Missing parent document');assert.ok(!seen.has(parent),'Cyclic document hierarchy');seen.add(parent);parent=documents.get(parent).parent_id;}
+  }
+  for(const meeting of backup.meetings){assert.ok(Array.isArray(meeting.task_ids)&&meeting.task_ids.length<=100,'Invalid meeting tasks');assert.equal(new Set(meeting.task_ids).size,meeting.task_ids.length,'Duplicate meeting task');for(const id of meeting.task_ids)assert.ok(tasks.has(id),'Missing meeting task');}
  }
  for(const asset of backup.document_assets||[]){assert.equal(asset.storage_path,backup.owner_id+'/'+asset.id);const bytes=files.get(asset.id);assert.ok(bytes,'Binary missing: '+asset.name);assert.equal(bytes.length,asset.size_bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),asset.sha256);}
  const db=new PGlite();
@@ -26,6 +34,7 @@ export async function verifyBackup(backup,files=new Map()){
   if(backup.schema_version>=2){await db.exec(await readFile(new URL('../supabase/migrations/202611190001_deer_backup.sql',import.meta.url),'utf8'));await db.exec(await readFile(new URL('../supabase/migrations/202611190002_deer_documents.sql',import.meta.url),'utf8'));}
   if(backup.schema_version>=3){await db.exec(await readFile(new URL('../supabase/tests/storage-bootstrap.sql',import.meta.url),'utf8'));await db.exec(await readFile(new URL('../supabase/migrations/202611190003_deer_e2_complete.sql',import.meta.url),'utf8'));}
   if(backup.schema_version>=4)await db.exec(await readFile(new URL('../supabase/migrations/202611190004_deer_word_processor.sql',import.meta.url),'utf8'));
+  if(backup.schema_version>=5)await db.exec(await readFile(new URL('../supabase/migrations/202611200001_deer_e3.sql',import.meta.url),'utf8'));
   await db.query('insert into auth.users(id) values ($1)',[backup.owner_id]);
   await db.exec('begin');
   try{
@@ -44,7 +53,7 @@ export async function verifyBackup(backup,files=new Map()){
    assert.equal(rows.length,expected.length);
    for(let i=0;i<rows.length;i++){
     const actual={...rows[i].record},original={...expected[i]};
-    for(const field of ['created_at','updated_at'].filter(f=>f in original)){
+    for(const field of ['created_at','updated_at','starts_at','ends_at','completed_at'].filter(f=>f in original&&original[f]!==null)){
      const comparison=await db.query('select $1::timestamptz = $2::timestamptz as same',[actual[field],original[field]]);
      assert.equal(comparison.rows[0].same,true,`Timestamp mismatch: ${field}`);
      delete actual[field];delete original[field];

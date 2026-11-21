@@ -2,11 +2,12 @@
 
 Aplicación privada Next.js/React/Material UI con Supabase y despliegue desde GitHub
 en Netlify. Jorge ha comprobado el núcleo E1 y los documentos E2.1 desde ordenador
-e iPhone. La nueva experiencia de procesador de texto está preparada localmente y requiere activación.
+e iPhone. E3 y E3 ampliada se preparan en `feature/e3-ampliada` para una publicación agrupada.
+Estado, activación y límites: [E3-estado.md](docs/E3-estado.md).
 
 ## Documentos, kanban e identidad Deergital
 
-Visual/Markdown/Lectura, autoguardado, borradores recuperables, imágenes y adjuntos
+Procesador visual, guardado manual, borradores recuperables, imágenes y adjuntos
 privados, tablas, destacados, Mermaid, enlaces internos y enlaces de vuelta.
 Importación/exportación Markdown y paquetes con recursos. Tipografía local Manrope,
 paleta Deergital e isotipo original para navegación/favicon.
@@ -35,7 +36,7 @@ Manrope se sirve localmente; su licencia OFL está en public/fonts.
 ## Supabase
 
 Aplicar en orden las migraciones de supabase/migrations. Para actualizar E2 completa (migración 202611190003 ya aplicada),
-aplicar solo `202611190004_deer_word_processor.sql` una vez, después de respaldar.
+aplicar `202611190004_deer_word_processor.sql` si aún falta. Para E3 sobre E2 ya operativa, aplicar solo `202611200001_deer_e3.sql` después de respaldar; ver el procedimiento E3.
 No ejecutar los archivos bootstrap de pruebas en Supabase.
 
 La cuenta Auth debe tener un perfil habilitado explícitamente. El acceso ordinario
@@ -50,25 +51,25 @@ No cambia las cuentas habilitadas ni permite registro público desde la aplicaci
 
 ## Respaldo y recuperación
 
-Descargar respaldo produce ZIP v4 con perfil, proyectos, tareas, documentos,
-relaciones, metadatos y bytes privados. Conservarlo fuera del repositorio.
+Tras activar E3, Descargar respaldo produce ZIP v5 con perfil, proyectos, tareas, documentos,
+relaciones, metadatos, reuniones y bytes privados. Conservarlo fuera del repositorio.
 
 ```sh
 node scripts/verify-backup.mjs RUTA_AL_ZIP
 ```
 
-También se aceptan los JSON/ZIP históricos v1/v2/v3. El verificador restaura en PostgreSQL
+También se aceptan los JSON/ZIP históricos v1/v2/v3/v4. El verificador restaura en PostgreSQL
 embebido y compara valores, relaciones y archivos; nunca escribe en Supabase.
 No incluye contraseñas/sesiones ni aprovisiona cuentas. La restauración operativa a
 otro servicio y el historial recuperable siguen siendo parte del cierre E4.
 
 ## Verificación
 
-49 pruebas automatizadas cubren reglas, RLS, restricciones, reintentos, conflictos,
-rollback, enlaces, archivos, conversión Tiptap, paquetes e integridad de respaldo.
-Compilación de producción y TypeScript aprobados. Revisión de interfaz con datos
-temporales: claro/oscuro, tablas, casillas, Mermaid, autoguardado y recuperación
-local tras fallo simulado.
+Ejecutar `pnpm test`, `pnpm typecheck`, `pnpm test:interface` y `pnpm build`.
+Las pruebas de navegador usan Chrome instalado, datos de prueba y una ruta temporal
+que el ejecutor elimina al terminar. No escriben en Supabase ni publican en Netlify.
+Se cubren reglas, RLS, reintentos, conflictos, rollback, jerarquía, reuniones,
+respaldo, MCP, guardado manual, Kanban, tablas, DOCX/PDF y recuperación de sesión.
 
 PGlite usa una conexión embebida: no sustituye la prueba con conexiones independientes
 contra Supabase. La activación pendiente requiere comprobar subidas/descargas,

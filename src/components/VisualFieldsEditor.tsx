@@ -1,0 +1,14 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {Alert,Button,MenuItem,TextField} from '@mui/material';
+import {ImageOutlined,DeleteOutlined} from '@mui/icons-material';
+import type {VisualFields} from '@/lib/types';
+export const projectColors=['#4228D3','#FF8600','#27187E','#00B4A6','#2962FF','#7861FF','#FF3CAC'];
+export async function prepareCover(file:File){
+ if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>10*1024*1024)throw Error('Selecciona una imagen PNG, JPG o WebP de hasta 10 MB.');
+ const image=await createImageBitmap(file);try{const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=300;const ctx=canvas.getContext('2d');if(!ctx)throw Error('No se pudo preparar la imagen.');const ratio=Math.max(canvas.width/image.width,canvas.height/image.height);ctx.drawImage(image,(canvas.width-image.width*ratio)/2,(canvas.height-image.height*ratio)/2,image.width*ratio,image.height*ratio);for(const quality of [.8,.65,.5,.35,.2]){const result=canvas.toDataURL('image/jpeg',quality);if(result.length<=90000)return result;}throw Error('La imagen contiene demasiado detalle. Prueba una imagen más sencilla.');}finally{image.close();}
+}
+export function Cover({value}:{value?:string}){return value?<img className="entity-cover" src={value} alt="Portada"/>:null;}
+export function VisualFieldsEditor({value,onChange,disabled=false,color,onColor,onBusy}:{value:VisualFields;onChange:(patch:VisualFields)=>void;disabled?:boolean;onBusy?:(busy:boolean)=>void;color?:string;onColor?:(color:string)=>void}){
+ const [error,setError]=useState(''),[busy,setBusy]=useState(false);useEffect(()=>{onBusy?.(busy);return()=>onBusy?.(false);},[busy]);return <section className="visual-fields"><TextField select label="Icono" value={value.icon||''} disabled={disabled} onChange={e=>onChange({icon:e.target.value})}><MenuItem value="">Sin icono</MenuItem>{['🦌','📁','📘','📄','✅','🎯','💡','📅','📌','🛠️','🚀','💬'].map(icon=><MenuItem key={icon} value={icon}>{icon}</MenuItem>)}</TextField>{onColor&&<label className="project-color-input">Color del proyecto<input type="color" value={color||'#4228D3'} disabled={disabled} onChange={e=>onColor(e.target.value)}/></label>}<Button component="label" disabled={disabled||busy} startIcon={<ImageOutlined/>}>{busy?'Preparando…':'Elegir portada'}<input type="file" hidden accept="image/png,image/jpeg,image/webp" onChange={async e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;setBusy(true);setError('');try{onChange({cover_image:await prepareCover(file)});}catch(error){setError(error instanceof Error?error.message:'No se pudo preparar la portada.');}finally{setBusy(false);}}}/></Button>{value.cover_image&&<Button disabled={disabled||busy} startIcon={<DeleteOutlined/>} onClick={()=>onChange({cover_image:''})}>Quitar portada</Button>}<Cover value={value.cover_image}/>{error&&<Alert severity="error">{error}</Alert>}</section>;
+}
